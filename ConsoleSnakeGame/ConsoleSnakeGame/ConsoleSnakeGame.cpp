@@ -94,6 +94,18 @@ void RequestForValidInputValue(T &receivingArg, std::string errorMsg) {
 	}
 }
 
+bool PositionIsTouchingTail(Vector2D position) {
+	bool touchedTail = false;
+
+	for (int i = 0; i < tailLength; ++i) {
+		if (tailPositions[i] == position) {
+			touchedTail = true;
+			break;
+		}
+	}
+	return touchedTail;
+}
+
 #pragma region Request_For_YesNo
 
 void PrintRespectiveYesNoTextByFirstRun(bool firstRun) {
@@ -132,8 +144,24 @@ void ClearScreen() {
 	std::cout << std::string(100, '\n');
 }
 
-void PlaceFruitRandomlyInPlayingField() {
-	currentFruitPosition = { rand() % width, rand() % height };
+bool ValidPositionForFruit(Vector2D position) {
+	bool isValidPosForFruit = true;
+
+	if (position == snakeHeadPosition) {
+		isValidPosForFruit = false;
+	}
+	else if (PositionIsTouchingTail(position)) {
+		isValidPosForFruit = false;
+	}
+
+	return isValidPosForFruit;
+}
+
+void PlaceFruitInPlayingField() {
+	// Change the fruit position while the fruit's current position is not valid.
+	do {
+		currentFruitPosition = { rand() % width, rand() % height };
+	} while (!ValidPositionForFruit(currentFruitPosition));
 }
 
 #pragma endregion
@@ -141,23 +169,11 @@ void PlaceFruitRandomlyInPlayingField() {
 void HandleFruitEating() {
 	++tailLength;
 	++playerScore;
-	PlaceFruitRandomlyInPlayingField();
+	PlaceFruitInPlayingField();
 }
 
 bool SnakeEatingFruit() {
 	return snakeHeadPosition == currentFruitPosition;
-}
-
-bool SnakeHeadTouchedTail() {
-	bool touchedTail = false;
-
-	for (int i = 0; i < tailLength; ++i) {
-		if (tailPositions[i] == snakeHeadPosition) {
-			touchedTail = true;
-			break;
-		}
-	}
-	return touchedTail;
 }
 
 bool SnakeHeadTouchedBorder() {
@@ -203,7 +219,7 @@ void UpdateGameLogic() {
 	UpdateSnakeTailPositions();
 	UpdateSnakePositionByCurrentMoveDirection();
 
-	if (SnakeHeadTouchedBorder() || SnakeHeadTouchedTail()) {
+	if (SnakeHeadTouchedBorder() || PositionIsTouchingTail(snakeHeadPosition)) {
 		gameOver = true;
 	}
 	else if (SnakeEatingFruit()) {
@@ -396,7 +412,7 @@ void InitializeGame() {
 	snakeHeadPosition = { (width / 2), (height / 2) };
 	tailPositions[0] = snakeHeadPosition;
 
-	PlaceFruitRandomlyInPlayingField();
+	PlaceFruitInPlayingField();
 }
 
 int main() {
